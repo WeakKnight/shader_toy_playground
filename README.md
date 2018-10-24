@@ -23,8 +23,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 ```
 
 ## Roadmap
-
-iChannel uniform,
+live editor(based on IMGUI),
+more uniform(iTimeDelta, iChannel, and so on),
 Buffer,
 Sound
 
