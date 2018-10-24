@@ -16,8 +16,8 @@ mod shader;
 use shader::Shader;
 
 // settings
-const SCREEN_WIDTH: f64 = 800.0;
-const SCREEN_HEIGHT: f64 = 600.0;
+const SCREEN_WIDTH: f64 = 640.0;
+const SCREEN_HEIGHT: f64 = 360.0;
 
 macro_rules! c_str {
     ($literal:expr) => {
@@ -42,7 +42,7 @@ fn main() {
     }
 
     let (ourShader, VBO, VAO, EBO) = unsafe {
-        let ourShader = Shader::new("src/vert.glsl", "src/frag.glsl"); // you can name your shader files however you like)
+        let ourShader = Shader::new("src/vert.glsl", "src/playground.glsl"); // you can name your shader files however you like)
 
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
@@ -105,6 +105,8 @@ fn main() {
     let mut timer = Instant::now();
     let mut current_time = timer.elapsed();
 
+    let (mut mouse_x, mut mouse_y):(f64, f64) = (0.0, 0.0);
+
     while running {
         events_loop.poll_events(|event| match event {
             glutin::Event::WindowEvent { event, .. } => match event {
@@ -112,7 +114,11 @@ fn main() {
                 glutin::WindowEvent::Resized(logical_size) => {
                     let dpi_factor = gl_window.get_hidpi_factor();
                     gl_window.resize(logical_size.to_physical(dpi_factor));
-                }
+                },
+                glutin::WindowEvent::CursorMoved{device_id, position, modifiers}=>{
+                    mouse_x = position.x;
+                    mouse_y = position.y;
+                },
                 _ => (),
             },
             _ => (),
@@ -132,6 +138,8 @@ fn main() {
             // render the triangle
             ourShader.useProgram();
             ourShader.setVec2(c_str!("iResolution"), SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32);
+            ourShader.setVec2(c_str!("iMouse"), mouse_x as f32, mouse_y as f32);
+            //println!("current mouse x is {:.3} y is {:.3}", mouse_x, mouse_y);
             ourShader.setFloat(c_str!("iTime"), time_in_s as f32);
 
             gl::BindVertexArray(VAO);

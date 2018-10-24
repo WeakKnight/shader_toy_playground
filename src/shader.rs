@@ -17,6 +17,25 @@ pub struct Shader {
     pub ID: u32,
 }
 
+const frag_shader_head: &str = r#"
+#version 330 
+out vec4 fragColor;
+in vec2 fragCoord;
+uniform vec2 iResolution;
+uniform vec2 iMouse;
+uniform float iTime;
+"#;
+
+const frag_shader_tail: &str = r#"
+void main()
+{
+    vec4 color = vec4(0.0,0.0,0.0,1.0);
+    mainImage( color, fragCoord.xy );
+    color.w = 1.0;
+    fragColor = color;
+}
+"#;
+
 /// NOTE: mixture of `shader_s.h` and `shader_m.h` (the latter just contains
 /// a few more setters for uniforms)
 #[allow(dead_code)]
@@ -36,9 +55,9 @@ impl Shader {
         fShaderFile
             .read_to_string(&mut fragmentCode)
             .expect("Failed to read fragment shader");
-
+        
         let vShaderCode = CString::new(vertexCode.as_bytes()).unwrap();
-        let fShaderCode = CString::new(fragmentCode.as_bytes()).unwrap();
+        let fShaderCode = CString::new(format!("{}{}{}",frag_shader_head,fragmentCode,frag_shader_tail).as_bytes()).unwrap();
 
         // 2. compile shaders
         unsafe {
