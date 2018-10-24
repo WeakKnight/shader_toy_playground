@@ -22,6 +22,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 }
 ```
 
+## Roadmap
+
+iChannel uniform
+Buffer
+Sound
+
 ## Screen Shot
 
 ![Image](https://raw.githubusercontent.com/WeakKnight/shader_toy_playground/master/ScreenShot0.png)
