@@ -28,7 +28,7 @@ macro_rules! c_str {
 fn main() {
     let mut events_loop = glutin::EventsLoop::new();
     let window = glutin::WindowBuilder::new()
-        .with_title("Hello, world!")
+        .with_title("Shadertoy Playground")
         .with_dimensions(LogicalSize::new(SCREEN_WIDTH, SCREEN_HEIGHT));
     let context = glutin::ContextBuilder::new().with_vsync(true);
     let gl_window = glutin::GlWindow::new(window, context, &events_loop).unwrap();
@@ -42,7 +42,7 @@ fn main() {
     }
 
     let (ourShader, VBO, VAO, EBO) = unsafe {
-        let ourShader = Shader::new("src/vert.glsl", "src/playground.glsl"); // you can name your shader files however you like)
+        let ourShader = Shader::new("src/vert.glsl", "playground.glsl"); // you can name your shader files however you like)
 
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
