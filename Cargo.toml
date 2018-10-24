@@ -1,6 +1,6 @@
 [package]
 name = "shader_toy_playground"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Knight <790184126@qq.com>"]
 
 [dependencies]
@@ -8,3 +8,6 @@ glutin = "*"
 gl = "*"
 cgmath = "*"
 image = "*"
+imgui = "*"
+glium = "*"
+imgui-glium-renderer = "*"
