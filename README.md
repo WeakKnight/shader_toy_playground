@@ -24,7 +24,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
 ## Screen Shot
 
-![Image](https://github.com/WeakKnight/shader_toy_playground/blob/master/ScreenShot0.png?raw=true)
+![Image](https://raw.githubusercontent.com/WeakKnight/shader_toy_playground/master/ScreenShot0.png)
 Default Shadertoy shader
-![Image](https://github.com/WeakKnight/shader_toy_playground/blob/master/ScreenShot1.png?raw=true)
+![Image](https://raw.githubusercontent.com/WeakKnight/shader_toy_playground/master/ScreenShot1.png)
 This Image uses the shader made by Inigo Quilez
