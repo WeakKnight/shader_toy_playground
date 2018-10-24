@@ -4,7 +4,7 @@
 
 Write your shader code into playground.glsl with glsl syntax,
 
-This environment provide Some uniform variables which samely provided in shadertoy like iMouse, iResolution, iTime
+This environment provide Some uniform variables which alikely provided by shadertoy like iMouse, iResolution, iTime
 
 You can write code just like this or simply copy one intriguing shader artwork from shadertoy
 
