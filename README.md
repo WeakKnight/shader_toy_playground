@@ -1,4 +1,4 @@
-#An image shader play ground like shadertoy
+# An image shader play ground like shadertoy
 
 ## Usage
 
@@ -22,7 +22,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 }
 ```
 
-##Screen Shot
+## Screen Shot
 
 ![Image](https://github.com/WeakKnight/shader_toy_playground/blob/master/ScreenShot0.png?raw=true)
 Default Shadertoy shader
