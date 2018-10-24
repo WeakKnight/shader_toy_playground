@@ -106,6 +106,7 @@ fn main() {
     let mut current_time = timer.elapsed();
 
     let (mut mouse_x, mut mouse_y):(f64, f64) = (0.0, 0.0);
+    let mut mouse_left_pressed = false;
 
     while running {
         events_loop.poll_events(|event| match event {
@@ -118,6 +119,19 @@ fn main() {
                 glutin::WindowEvent::CursorMoved{device_id, position, modifiers}=>{
                     mouse_x = position.x;
                     mouse_y = position.y;
+                },
+                glutin::WindowEvent::MouseInput{device_id, button, state, modifiers}=>{
+                    if (button == glutin::MouseButton::Left && state == glutin::ElementState::Pressed)
+                    {
+                        mouse_left_pressed = true;
+                        println!("mouse press true");
+                    }
+
+                    if (button == glutin::MouseButton::Left && state == glutin::ElementState::Released)
+                    {
+                        mouse_left_pressed = false;
+                        println!("mouse press false");
+                    }
                 },
                 _ => (),
             },
@@ -138,7 +152,10 @@ fn main() {
             // render the triangle
             ourShader.useProgram();
             ourShader.setVec2(c_str!("iResolution"), SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32);
-            ourShader.setVec2(c_str!("iMouse"), mouse_x as f32, mouse_y as f32);
+            if(mouse_left_pressed)
+            {
+                ourShader.setVec2(c_str!("iMouse"), mouse_x as f32, mouse_y as f32);
+            }
             //println!("current mouse x is {:.3} y is {:.3}", mouse_x, mouse_y);
             ourShader.setFloat(c_str!("iTime"), time_in_s as f32);
 
