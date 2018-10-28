@@ -15,6 +15,13 @@ use glutin::GlContext;
 mod shader;
 use shader::Shader;
 
+extern crate notify;
+
+use notify::{RecommendedWatcher, Watcher, RecursiveMode};
+use std::thread;
+use std::sync::mpsc;
+use std::sync::{Mutex, Arc};
+
 // settings
 const SCREEN_WIDTH: f64 = 640.0;
 const SCREEN_HEIGHT: f64 = 360.0;
@@ -41,7 +48,7 @@ fn main() {
         gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
     }
 
-    let (ourShader, VBO, VAO, EBO) = unsafe {
+    let (mut ourShader, VBO, VAO, EBO) = unsafe {
         let ourShader = Shader::new("src/vert.glsl", "playground.glsl"); // you can name your shader files however you like)
 
         // set up vertex data (and buffer(s)) and configure vertex attributes
@@ -102,11 +109,35 @@ fn main() {
     };
 
     let mut running = true;
-    let mut timer = Instant::now();
+    let timer = Instant::now();
     let mut current_time = timer.elapsed();
 
     let (mut mouse_x, mut mouse_y):(f64, f64) = (0.0, 0.0);
     let mut mouse_left_pressed = false;
+
+    thread::spawn(move || {
+        let (tx, rx) = mpsc::channel();
+        // Automatically select the best implementation for your platform.
+        // You can also access each implementation directly e.g. INotifyWatcher.
+        let mut watcher: RecommendedWatcher = Watcher::new(tx, Duration::from_secs(2)).unwrap();
+
+        // Add a path to be watched. All files and directories at that path and
+        // below will be monitored for changes.
+        watcher.watch("playground.glsl", RecursiveMode::NonRecursive).unwrap();
+
+        loop
+        {
+            match rx.recv() {
+                Ok(event) => {
+                    println!("Shader Changed")
+                    //ourShader.update("src/vert.glsl", "playground.glsl")
+                    },
+                Err(e) => {
+                    println!("Error");
+                },
+            }
+        }
+    });
 
     while running {
         events_loop.poll_events(|event| match event {
@@ -121,13 +152,13 @@ fn main() {
                     mouse_y = position.y;
                 },
                 glutin::WindowEvent::MouseInput{device_id, button, state, modifiers}=>{
-                    if (button == glutin::MouseButton::Left && state == glutin::ElementState::Pressed)
+                    if button == glutin::MouseButton::Left && state == glutin::ElementState::Pressed
                     {
                         mouse_left_pressed = true;
                         println!("mouse press true");
                     }
 
-                    if (button == glutin::MouseButton::Left && state == glutin::ElementState::Released)
+                    if button == glutin::MouseButton::Left && state == glutin::ElementState::Released
                     {
                         mouse_left_pressed = false;
                         println!("mouse press false");
@@ -152,7 +183,7 @@ fn main() {
             // render the triangle
             ourShader.useProgram();
             ourShader.setVec2(c_str!("iResolution"), SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32);
-            if(mouse_left_pressed)
+            if mouse_left_pressed
             {
                 ourShader.setVec2(c_str!("iMouse"), mouse_x as f32, mouse_y as f32);
             }

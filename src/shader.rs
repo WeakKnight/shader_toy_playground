@@ -13,6 +13,7 @@ extern crate cgmath;
 use self::cgmath::{Matrix, Matrix4, Vector3};
 use self::cgmath::prelude::*;
 
+#[derive(Debug, Clone, Copy)]
 pub struct Shader {
     pub ID: u32,
 }
@@ -40,6 +41,49 @@ void main()
 /// a few more setters for uniforms)
 #[allow(dead_code)]
 impl Shader {
+    pub fn update(&mut self, vertexPath: &str, fragmentPath: &str){
+        let mut vShaderFile = File::open(vertexPath)
+            .unwrap_or_else(|_| panic!("Failed to open {}", vertexPath));
+        let mut fShaderFile = File::open(fragmentPath)
+            .unwrap_or_else(|_| panic!("Failed to open {}", fragmentPath));
+        let mut vertexCode = String::new();
+        let mut fragmentCode = String::new();
+        vShaderFile
+            .read_to_string(&mut vertexCode)
+            .expect("Failed to read vertex shader");
+        fShaderFile
+            .read_to_string(&mut fragmentCode)
+            .expect("Failed to read fragment shader");
+        
+        let vShaderCode = CString::new(vertexCode.as_bytes()).unwrap();
+        let fShaderCode = CString::new(format!("{}{}{}",frag_shader_head,fragmentCode,frag_shader_tail).as_bytes()).unwrap();
+
+        // 2. compile shaders
+        unsafe {
+            // vertex shader
+            let vertex = gl::CreateShader(gl::VERTEX_SHADER);
+            gl::ShaderSource(vertex, 1, &vShaderCode.as_ptr(), ptr::null());
+            gl::CompileShader(vertex);
+            self.checkCompileErrors(vertex, "VERTEX");
+            // fragment Shader
+            let fragment = gl::CreateShader(gl::FRAGMENT_SHADER);
+            gl::ShaderSource(fragment, 1, &fShaderCode.as_ptr(), ptr::null());
+            gl::CompileShader(fragment);
+            self.checkCompileErrors(fragment, "FRAGMENT");
+            // shader Program
+            gl::DeleteProgram(self.ID);
+            let ID = gl::CreateProgram();
+            gl::AttachShader(ID, vertex);
+            gl::AttachShader(ID, fragment);
+            gl::LinkProgram(ID);
+            self.checkCompileErrors(ID, "PROGRAM");
+            // delete the shaders as they're linked into our program now and no longer necessary
+            gl::DeleteShader(vertex);
+            gl::DeleteShader(fragment);
+            self.ID = ID;
+        }
+    }
+
     pub fn new(vertexPath: &str, fragmentPath: &str) -> Shader {
         let mut shader = Shader { ID: 0 };
         // 1. retrieve the vertex/fragment source code from filesystem
