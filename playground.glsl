@@ -80,7 +80,6 @@ float triangleDist(vec2 p, float radius)
 				-radius * 0.5;
 }
 
-
 float triangleDist(vec2 p, float width, float height)
 {
 	vec2 n = normalize(vec2(height, width / 2.0));
@@ -114,70 +113,24 @@ float lineDist(vec2 p, vec2 start, vec2 end, float width)
 	return length( (start - p) - proj ) - (width / 2.0);
 }
 
-
-///////////////////////
-// Masks for drawing //
-///////////////////////
-
-
 float fillMask(float dist)
 {
 	return clamp(-dist, 0.0, 1.0);
 }
 
-///////////////
-// The scene //
-///////////////
-
-
 float sceneDist(vec2 p)
 {
-	float c = circleDist(		translate(p, vec2(100, 250)), 40.0);
-	float b1 =  boxDist(		translate(p, vec2(200, 250)), vec2(40, 40), 	0.0);
-	float b2 =  boxDist(		translate(p, vec2(300, 250)), vec2(40, 40), 	10.0);
-	float l = lineDist(			p, 			 vec2(370, 220),  vec2(430, 280),	10.0);
-	float t1 = triangleDist(	translate(p, vec2(500, 210)), 80.0, 			80.0);
-	float t2 = triangleDist(	rotateCW(translate(p, vec2(600, 250)), iTime), 40.0);
-	
-	float m = 	merge(c, b1);
-	m = 		merge(m, b2);
-	m = 		merge(m, l);
-	m = 		merge(m, t1);
-	m = 		merge(m, t2);
-	
-	float b3 = boxDist(		translate(p, vec2(100, sin(iTime * 3.0 + 1.0) * 40.0 + 100.0)), 
-					   		vec2(40, 15), 	0.0);
-	float c2 = circleDist(	translate(p, vec2(100, 100)),	30.0);
-	float s = substract(b3, c2);
-	
-	float b4 = boxDist(		translate(p, vec2(200, sin(iTime * 3.0 + 2.0) * 40.0 + 100.0)), 
-					   		vec2(40, 15), 	0.0);
-	float c3 = circleDist(	translate(p, vec2(200, 100)), 	30.0);
-	float i = intersect(b4, c3);
-	
-	float b5 = boxDist(		translate(p, vec2(300, sin(iTime * 3.0 + 3.0) * 40.0 + 100.0)), 
-					   		vec2(40, 15), 	0.0);
-	float c4 = circleDist(	translate(p, vec2(300, 100)), 	30.0);
-	float a = merge(b5, c4);
-	
-	float b6 = boxDist(		translate(p, vec2(400, 100)),	vec2(40, 15), 	0.0);
-	float c5 = circleDist(	translate(p, vec2(400, 100)), 	30.0);
-	float sm = smoothMerge(b6, c5, 10.0);
-	
-	float sc = semiCircleDist(translate(p, vec2(500,100)), 40.0, 90.0, 10.0);
-    
-    float b7 = boxDist(		translate(p, vec2(600, sin(iTime * 3.0 + 3.0) * 40.0 + 100.0)), 
-					   		vec2(40, 15), 	0.0);
-	float c6 = circleDist(	translate(p, vec2(600, 100)), 	30.0);
-	float e = mergeExclude(b7, c6);
-    
-	m = merge(m, s);
-	m = merge(m, i);
-	m = merge(m, a);
-	m = merge(m, sm);
-	m = merge(m, sc);
-    m = merge(m, e);
-	
+	float c = circleDist(		translate(p, vec2(320, 180)), 150.0);
+	float innerC = circleDist(		translate(p, vec2(320, 180)), 95.0);
+    float boxL = boxDist(translate(p, vec2(320 - 38, 180)), vec2(58, 95), 30);
+	float m = substract(innerC, c);
+	m = substract(boxL, m);
+	float boxInner = boxDist(translate(p, vec2(320 - 90, 180)), vec2(28, 98), 20);
+	m = merge(boxInner, m);
+	//tree
+	float triangle = triangleDist(translate(p, vec2(320 + 5, 180 - 120)), 20.0, 200.0);
+	m = merge(triangle, m);
+
 	return m;
 }
 
@@ -200,14 +153,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 	//float dist = sceneSmooth(p, 5.0);
 	float dist = sceneDist(p);
 	
-	
-	
 	// gradient
-	vec4 col = vec4(0.5, 0.5, 0.5, 1.0) * (1.0 - length(c - p)/iResolution.x);
-	// grid
-	col *= clamp(min(mod(p.y, 10.0), mod(p.x, 10.0)), 0.9, 1.0);
+	vec4 col = vec4(1.0, 1.0, 1.0, 1.0);
 	// shape fill
-	col = mix(col, vec4(1.0, 0.4, 0.0, 1.0), fillMask(dist));
+	col = mix(col, vec4(0.17, 0.41, 0.26, 1.0), fillMask(dist));
 
 	fragColor = clamp(col, 0.0, 1.0);
 }
