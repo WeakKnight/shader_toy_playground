@@ -114,7 +114,10 @@ fn main() {
 
     let (mut mouse_x, mut mouse_y):(f64, f64) = (0.0, 0.0);
     let mut mouse_left_pressed = false;
+    
+    let counter = Arc::new(Mutex::new(0));
 
+    let counter_copy = Arc::clone(&counter);
     thread::spawn(move || {
         let (tx, rx) = mpsc::channel();
         // Automatically select the best implementation for your platform.
@@ -129,7 +132,9 @@ fn main() {
         {
             match rx.recv() {
                 Ok(event) => {
-                    println!("Shader Changed")
+                    let mut num = counter_copy.lock().unwrap();
+                    *num = 1;
+                    println!("Shader Changed");
                     //ourShader.update("src/vert.glsl", "playground.glsl")
                     },
                 Err(e) => {
@@ -140,6 +145,11 @@ fn main() {
     });
 
     while running {
+        if *counter.lock().unwrap() == 1
+        {
+            *counter.lock().unwrap() = 0;
+            ourShader.update("src/vert.glsl", "playground.glsl");
+        }
         events_loop.poll_events(|event| match event {
             glutin::Event::WindowEvent { event, .. } => match event {
                 glutin::WindowEvent::CloseRequested => running = false,
