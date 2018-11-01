@@ -49,7 +49,7 @@ fn main() {
     }
 
     let (mut shader, vbo, vao, ebo) = unsafe {
-        let shader = Shader::new("src/vert.glsl", "playground.glsl"); // you can name your shader files however you like)
+        let shader = Shader::new("src/vert.glsl", "main.glsl"); // you can name your shader files however you like)
 
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
@@ -122,7 +122,7 @@ fn main() {
 
         // Add a path to be watched. All files and directories at that path and
         // below will be monitored for changes.
-        watcher.watch("playground.glsl", RecursiveMode::NonRecursive).unwrap();
+        watcher.watch("main.glsl", RecursiveMode::NonRecursive).unwrap();
 
         loop
         {

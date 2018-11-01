@@ -1,0 +1,8 @@
+{
+    "name":"Dartmouth Icon",
+    "channels":[],
+    "codes":{
+        "main":"main.glsl",
+        "buffers":[]
+    }
+}

@@ -43,35 +43,7 @@ float triangleDist(vec2 p, float width, float height){
 	return max(	abs(p).x*n.x + p.y*n.y - (height*n.y), -p.y);
 }
 float triangleDist(vec2 p, vec2 a, vec2 b, vec2 c){
-	float len_pa = length(pa);
-	float len_pb = length(pb);
-	float len_pc = length(pc);
-	float len_max = max(max(len_pa, len_pb), len_pc);
-	float len_min = min(min(len_pa, len_pb), len_pc);
-	float s = 1.0;
-	vec2 n,f;
-	if(len_min == len_pa){
-		n = pa;
-		f = pb;
-		if(len_max == len_pb){
-			f = pc;
-		}
-	}
-	else if(len_min == len_pb){
-		n = pb;
-		f = pa;
-		if(len_max == len_pa){
-			f = pc;
-		}
-	}
-	else{
-		n = pc;
-		f = pa;
-		if(len_max == len_pa){
-			f = pb;
-		}
-	}
-	
+	return 0.0;
 }
 float semiCircleDist(vec2 p, float radius, float angle, float width){
 	width /= 2.0;
