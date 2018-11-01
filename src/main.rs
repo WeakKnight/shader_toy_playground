@@ -44,12 +44,12 @@ fn main() {
         gl_window.make_current().unwrap();
     }
 
-    unsafe {
+    {
         gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
     }
 
-    let (mut ourShader, VBO, VAO, EBO) = unsafe {
-        let ourShader = Shader::new("src/vert.glsl", "playground.glsl"); // you can name your shader files however you like)
+    let (mut shader, vbo, vao, ebo) = unsafe {
+        let shader = Shader::new("src/vert.glsl", "playground.glsl"); // you can name your shader files however you like)
 
         // set up vertex data (and buffer(s)) and configure vertex attributes
         // ------------------------------------------------------------------
@@ -63,14 +63,14 @@ fn main() {
 
         let indices = [0, 1, 3, 1, 2, 3];
 
-        let (mut VBO, mut VAO, mut EBO) = (0, 0, 0);
-        gl::GenVertexArrays(1, &mut VAO);
-        gl::GenBuffers(1, &mut VBO);
-        gl::GenBuffers(1, &mut EBO);
+        let (mut vbo, mut vao, mut ebo) = (0, 0, 0);
+        gl::GenVertexArrays(1, &mut vao);
+        gl::GenBuffers(1, &mut vbo);
+        gl::GenBuffers(1, &mut ebo);
         // bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
-        gl::BindVertexArray(VAO);
+        gl::BindVertexArray(vao);
 
-        gl::BindBuffer(gl::ARRAY_BUFFER, VBO);
+        gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
         gl::BufferData(
             gl::ARRAY_BUFFER,
             (vertices.len() * mem::size_of::<GLfloat>()) as GLsizeiptr,
@@ -78,7 +78,7 @@ fn main() {
             gl::STATIC_DRAW,
         );
 
-        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, EBO);
+        gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
         gl::BufferData(
             gl::ELEMENT_ARRAY_BUFFER,
             (indices.len() * mem::size_of::<GLfloat>()) as GLsizeiptr,
@@ -105,12 +105,12 @@ fn main() {
         // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
         // gl::BindVertexArray(0);
 
-        (ourShader, VBO, VAO, EBO)
+        (shader, vbo, vao, ebo)
     };
 
     let mut running = true;
     let timer = Instant::now();
-    let mut current_time = timer.elapsed();
+    let mut current_time;
 
     let (mut mouse_x, mut mouse_y):(f64, f64) = (0.0, 0.0);
     let mut mouse_left_pressed = false;
@@ -131,13 +131,13 @@ fn main() {
         loop
         {
             match rx.recv() {
-                Ok(event) => {
+                Ok(_event) => {
                     let mut should_update_shader_value = should_update_shader_copy.lock().unwrap();
                     *should_update_shader_value = 1;
                     println!("Shader Changed");
                     //ourShader.update("src/vert.glsl", "playground.glsl")
                     },
-                Err(e) => {
+                Err(_event) => {
                     println!("Error");
                 },
             }
@@ -148,7 +148,7 @@ fn main() {
         if *should_update_shader.lock().unwrap() == 1
         {
             *should_update_shader.lock().unwrap() = 0;
-            ourShader.update("src/vert.glsl", "playground.glsl");
+            shader.update("src/vert.glsl", "playground.glsl");
         }
         events_loop.poll_events(|event| match event {
             glutin::Event::WindowEvent { event, .. } => match event {
@@ -157,11 +157,11 @@ fn main() {
                     let dpi_factor = gl_window.get_hidpi_factor();
                     gl_window.resize(logical_size.to_physical(dpi_factor));
                 },
-                glutin::WindowEvent::CursorMoved{device_id, position, modifiers}=>{
+                glutin::WindowEvent::CursorMoved{device_id:_, position, modifiers:_}=>{
                     mouse_x = position.x;
                     mouse_y = position.y;
                 },
-                glutin::WindowEvent::MouseInput{device_id, button, state, modifiers}=>{
+                glutin::WindowEvent::MouseInput{device_id:_, button, state, modifiers:_}=>{
                     if button == glutin::MouseButton::Left && state == glutin::ElementState::Pressed
                     {
                         mouse_left_pressed = true;
@@ -191,24 +191,24 @@ fn main() {
             gl::Clear(gl::COLOR_BUFFER_BIT);
 
             // render the triangle
-            ourShader.useProgram();
-            ourShader.setVec2(c_str!("iResolution"), SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32);
+            shader.useProgram();
+            shader.setVec2(c_str!("iResolution"), SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32);
             if mouse_left_pressed
             {
-                ourShader.setVec2(c_str!("iMouse"), mouse_x as f32, mouse_y as f32);
+                shader.setVec2(c_str!("iMouse"), mouse_x as f32, mouse_y as f32);
             }
             //println!("current mouse x is {:.3} y is {:.3}", mouse_x, mouse_y);
-            ourShader.setFloat(c_str!("iTime"), time_in_s as f32);
+            shader.setFloat(c_str!("iTime"), time_in_s as f32);
 
-            gl::BindVertexArray(VAO);
+            gl::BindVertexArray(vao);
             gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
         }
 
         gl_window.swap_buffers().unwrap();
     }
     unsafe {
-        gl::DeleteVertexArrays(1, &VAO);
-        gl::DeleteBuffers(1, &VBO);
-        gl::DeleteBuffers(1, &EBO);
+        gl::DeleteVertexArrays(1, &vao);
+        gl::DeleteBuffers(1, &vbo);
+        gl::DeleteBuffers(1, &ebo);
     }
 }
