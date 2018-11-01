@@ -101,10 +101,6 @@ fn main() {
         );
         gl::EnableVertexAttribArray(1);
 
-        // You can unbind the VAO afterwards so other VAO calls won't accidentally modify this VAO, but this rarely happens. Modifying other
-        // VAOs requires a call to glBindVertexArray anyways so we generally don't unbind VAOs (nor VBOs) when it's not directly necessary.
-        // gl::BindVertexArray(0);
-
         (shader, vbo, vao, ebo)
     };
 
@@ -190,7 +186,6 @@ fn main() {
             gl::ClearColor(0.0, 0.0, 0.0, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
 
-            // render the triangle
             shader.useProgram();
             shader.setVec2(c_str!("iResolution"), SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32);
             if mouse_left_pressed
