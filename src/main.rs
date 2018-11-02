@@ -3,10 +3,10 @@ use self::gl::types::*;
 
 extern crate glutin;
 
+use std::ffi::CStr;
 use std::mem;
 use std::os::raw::c_void;
 use std::ptr;
-use std::ffi::CStr;
 use std::time::{Duration, Instant};
 
 use glutin::dpi::*;
@@ -17,10 +17,15 @@ use shader::Shader;
 
 extern crate notify;
 
-use notify::{RecommendedWatcher, Watcher, RecursiveMode};
-use std::thread;
+use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::sync::mpsc;
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex};
+use std::thread;
+
+//IMGUI
+extern crate imgui;
+extern crate imgui_glutin_support;
+extern crate imgui_opengl_renderer;
 
 // settings
 const SCREEN_WIDTH: f64 = 640.0;
@@ -29,7 +34,7 @@ const SCREEN_HEIGHT: f64 = 360.0;
 macro_rules! c_str {
     ($literal:expr) => {
         CStr::from_bytes_with_nul_unchecked(concat!($literal, "\0").as_bytes())
-    }
+    };
 }
 
 fn main() {
@@ -48,6 +53,11 @@ fn main() {
         gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
     }
 
+    let mut imgui = imgui::ImGui::init();
+    imgui.set_ini_filename(None);
+    let renderer = imgui_opengl_renderer::Renderer::new(&mut imgui, |s| gl_window.get_proc_address(s) as _);
+    imgui_glutin_support::configure_keys(&mut imgui);
+
     let (mut shader, vbo, vao, ebo) = unsafe {
         let shader = Shader::new("src/vert.glsl", "main.glsl"); // you can name your shader files however you like)
 
@@ -55,10 +65,26 @@ fn main() {
         // ------------------------------------------------------------------
         // HINT: type annotation is crucial since default for float literals is f64
         let vertices: [f32; 20] = [
-            1.0, 1.0, 0.0, 1.0 * SCREEN_WIDTH as f32, 1.0 * SCREEN_HEIGHT as f32,
-            1.0, -1.0, 0.0, 1.0 * SCREEN_WIDTH as f32, 0.0,
-            -1.0, -1.0, 0.0, 0.0, 0.0, 
-            -1.0,1.0, 0.0, 0.0, 1.0 * SCREEN_HEIGHT as f32,
+            1.0,
+            1.0,
+            0.0,
+            1.0 * SCREEN_WIDTH as f32,
+            1.0 * SCREEN_HEIGHT as f32,
+            1.0,
+            -1.0,
+            0.0,
+            1.0 * SCREEN_WIDTH as f32,
+            0.0,
+            -1.0,
+            -1.0,
+            0.0,
+            0.0,
+            0.0,
+            -1.0,
+            1.0,
+            0.0,
+            0.0,
+            1.0 * SCREEN_HEIGHT as f32,
         ];
 
         let indices = [0, 1, 3, 1, 2, 3];
@@ -108,9 +134,9 @@ fn main() {
     let timer = Instant::now();
     let mut current_time;
 
-    let (mut mouse_x, mut mouse_y):(f64, f64) = (0.0, 0.0);
+    let (mut mouse_x, mut mouse_y): (f64, f64) = (0.0, 0.0);
     let mut mouse_left_pressed = false;
-    
+
     let should_update_shader = Arc::new(Mutex::new(0));
 
     let should_update_shader_copy = Arc::clone(&should_update_shader);
@@ -122,74 +148,91 @@ fn main() {
 
         // Add a path to be watched. All files and directories at that path and
         // below will be monitored for changes.
-        watcher.watch("main.glsl", RecursiveMode::NonRecursive).unwrap();
+        watcher
+            .watch("main.glsl", RecursiveMode::NonRecursive)
+            .unwrap();
 
-        loop
-        {
+        loop {
             match rx.recv() {
                 Ok(_event) => {
                     let mut should_update_shader_value = should_update_shader_copy.lock().unwrap();
                     *should_update_shader_value = 1;
                     println!("Shader Changed");
                     //ourShader.update("src/vert.glsl", "playground.glsl")
-                    },
+                }
                 Err(_event) => {
                     println!("Error");
-                },
+                }
             }
         }
     });
+    
+    let hidpi_factor = gl_window.get_hidpi_factor().round();
 
     while running {
-        if *should_update_shader.lock().unwrap() == 1
-        {
-            *should_update_shader.lock().unwrap() = 0;
-            shader.update("src/vert.glsl", "playground.glsl");
-        }
-        events_loop.poll_events(|event| match event {
+        //Fix Mojave Bug
+        gl_window.resize(PhysicalSize::new(SCREEN_WIDTH, SCREEN_HEIGHT));
+
+        events_loop.poll_events(|event| 
+        match event {
             glutin::Event::WindowEvent { event, .. } => match event {
                 glutin::WindowEvent::CloseRequested => running = false,
                 glutin::WindowEvent::Resized(logical_size) => {
                     let dpi_factor = gl_window.get_hidpi_factor();
                     gl_window.resize(logical_size.to_physical(dpi_factor));
-                },
-                glutin::WindowEvent::CursorMoved{device_id:_, position, modifiers:_}=>{
+                }
+                glutin::WindowEvent::CursorMoved {
+                    device_id: _,
+                    position,
+                    modifiers: _,
+                } => {
                     mouse_x = position.x;
                     mouse_y = position.y;
-                },
-                glutin::WindowEvent::MouseInput{device_id:_, button, state, modifiers:_}=>{
+                }
+                glutin::WindowEvent::MouseInput {
+                    device_id: _,
+                    button,
+                    state,
+                    modifiers: _,
+                } => {
                     if button == glutin::MouseButton::Left && state == glutin::ElementState::Pressed
                     {
                         mouse_left_pressed = true;
                         println!("mouse press true");
                     }
 
-                    if button == glutin::MouseButton::Left && state == glutin::ElementState::Released
+                    if button == glutin::MouseButton::Left
+                        && state == glutin::ElementState::Released
                     {
                         mouse_left_pressed = false;
                         println!("mouse press false");
                     }
-                },
+                }
                 _ => (),
             },
             _ => (),
         });
 
-        //To Fix Mojave Bug
-        gl_window.resize(PhysicalSize::new(SCREEN_WIDTH, SCREEN_HEIGHT));
-        
         current_time = timer.elapsed();
-        let time_in_s = current_time.as_secs() as f32 + (current_time.subsec_micros() as f32 /1000000.0 as f32) as f32;
-        //println!("current time is {:.3}", time_in_s);
-        //info("time is {}", time_in_s);
+        let time_in_s = current_time.as_secs() as f32
+            + (current_time.subsec_micros() as f32 / 1000000.0 as f32) as f32;
+
+        if *should_update_shader.lock().unwrap() == 1 {
+            *should_update_shader.lock().unwrap() = 0;
+            shader.update("src/vert.glsl", "playground.glsl");
+        }
+
         unsafe {
             gl::ClearColor(0.0, 0.0, 0.0, 1.0);
             gl::Clear(gl::COLOR_BUFFER_BIT);
 
             shader.useProgram();
-            shader.setVec2(c_str!("iResolution"), SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32);
-            if mouse_left_pressed
-            {
+            shader.setVec2(
+                c_str!("iResolution"),
+                SCREEN_WIDTH as f32,
+                SCREEN_HEIGHT as f32,
+            );
+            if mouse_left_pressed {
                 shader.setVec2(c_str!("iMouse"), mouse_x as f32, mouse_y as f32);
             }
             //println!("current mouse x is {:.3} y is {:.3}", mouse_x, mouse_y);
@@ -197,7 +240,36 @@ fn main() {
 
             gl::BindVertexArray(vao);
             gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
+
         }
+
+        let physical_size = gl_window
+            .get_inner_size()
+            .unwrap()
+            .to_physical(gl_window.get_hidpi_factor());
+        let logical_size = physical_size.to_logical(hidpi_factor);
+
+        let frame_size = imgui::FrameSize {
+            logical_size: logical_size.into(),
+            hidpi_factor,
+        };
+        use imgui::*;
+        let ui = imgui.frame(frame_size, 0.016);
+        ui.window(im_str!("Hello world"))
+        .size((300.0, 100.0), ImGuiCond::FirstUseEver)
+        .build(|| {
+            ui.text(im_str!("Hello world!"));
+            ui.text(im_str!("こんにちは世界！"));
+            ui.text(im_str!("This...is...imgui-rs!"));
+            ui.separator();
+            let mouse_pos = ui.imgui().mouse_pos();
+            ui.text(im_str!(
+                "Mouse Position: ({:.1},{:.1})",
+                mouse_pos.0,
+                mouse_pos.1
+            ));
+        });
+        renderer.render(ui);
 
         gl_window.swap_buffers().unwrap();
     }

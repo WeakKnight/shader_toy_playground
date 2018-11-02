@@ -11,3 +11,5 @@ Cargo.lock
 
 # VS CODE SETTING
 .vscode
+
+.DS_Store

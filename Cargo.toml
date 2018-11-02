@@ -9,3 +9,6 @@ gl = "*"
 cgmath = "*"
 image = "*"
 notify = "*"
+imgui = "*"
+imgui-glutin-support = "*"
+imgui-opengl-renderer = { version = "0.2.4", path = "rust-imgui-opengl-renderer" }
