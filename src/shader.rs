@@ -25,6 +25,10 @@ in vec2 fragCoord;
 uniform vec2 iResolution;
 uniform vec2 iMouse;
 uniform float iTime;
+uniform sampler2D iChannel0;
+uniform sampler2D iChannel1;
+uniform sampler2D iChannel2;
+uniform sampler2D iChannel3;
 "#;
 
 const FRAG_SHADER_TAIL: &str = r#"

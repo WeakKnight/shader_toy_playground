@@ -1,8 +1,13 @@
 {
-    "name":"Dartmouth Icon",
-    "channels":[],
-    "codes":{
-        "main":"main.glsl",
-        "buffers":[]
+    "name": "Dartmouth Icon",
+    "iChannels": [
+        {
+            "type": "texture_2d",
+            "path": "dart400x400.jpg"
+        }
+    ],
+    "codes": {
+        "main": "main.glsl",
+        "buffers": []
     }
 }

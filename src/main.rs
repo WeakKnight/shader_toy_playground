@@ -21,11 +21,17 @@ use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use std::sync::mpsc;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::fs::File;
+use std::io::Read;
+use std::path::Path;
 
-//IMGUI
-extern crate imgui;
-extern crate imgui_glutin_support;
-extern crate imgui_opengl_renderer;
+extern crate image;
+use image::GenericImage;
+use image::DynamicImage::*;
+use image::GenericImageView;
+
+#[macro_use]
+extern crate json;
 
 // settings
 const SCREEN_WIDTH: f64 = 640.0;
@@ -35,6 +41,34 @@ macro_rules! c_str {
     ($literal:expr) => {
         CStr::from_bytes_with_nul_unchecked(concat!($literal, "\0").as_bytes())
     };
+}
+
+pub unsafe fn load_texture(path: &str) -> u32 {
+    let mut textureID = 0;
+
+    gl::GenTextures(1, &mut textureID);
+    let img = image::open(&Path::new(path)).expect("Texture failed to load");
+    let format = match img {
+        ImageLuma8(_) => gl::RED,
+        ImageLumaA8(_) => gl::RG,
+        ImageRgb8(_) => gl::RGB,
+        ImageRgba8(_) => gl::RGBA,
+        _ => gl::RGBA
+    };
+
+    let data = img.raw_pixels();
+
+    gl::BindTexture(gl::TEXTURE_2D, textureID);
+    gl::TexImage2D(gl::TEXTURE_2D, 0, format as i32, img.width() as i32, img.height() as i32,
+        0, format, gl::UNSIGNED_BYTE, &data[0] as *const u8 as *const c_void);
+    gl::GenerateMipmap(gl::TEXTURE_2D);
+
+    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32);
+    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32);
+    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR_MIPMAP_LINEAR as i32);
+    gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+
+    textureID
 }
 
 fn main() {
@@ -52,11 +86,6 @@ fn main() {
     {
         gl::load_with(|symbol| gl_window.get_proc_address(symbol) as *const _);
     }
-
-    let mut imgui = imgui::ImGui::init();
-    imgui.set_ini_filename(None);
-    let renderer = imgui_opengl_renderer::Renderer::new(&mut imgui, |s| gl_window.get_proc_address(s) as _);
-    imgui_glutin_support::configure_keys(&mut imgui);
 
     let (mut shader, vbo, vao, ebo) = unsafe {
         let shader = Shader::new("src/vert.glsl", "main.glsl"); // you can name your shader files however you like)
@@ -158,7 +187,6 @@ fn main() {
                     let mut should_update_shader_value = should_update_shader_copy.lock().unwrap();
                     *should_update_shader_value = 1;
                     println!("Shader Changed");
-                    //ourShader.update("src/vert.glsl", "playground.glsl")
                 }
                 Err(_event) => {
                     println!("Error");
@@ -166,9 +194,26 @@ fn main() {
             }
         }
     });
-    
-    let hidpi_factor = gl_window.get_hidpi_factor().round();
-
+    // /////////Project Json Loading
+    // let (channel0) = unsafe {
+    //     let mut f = File::open("project.json").unwrap();
+    //     let mut buffer = String::new();
+    //     f.read_to_string(&mut buffer).unwrap();
+    //     let mut json_object = json::parse(&buffer).unwrap();
+    //     for x in 0..json_object["iChannels"].len()
+    //     {
+    //         let mut iChannel = &json_object["iChannels"][x];
+    //         let path = iChannel["path"].as_str().expect("hehe");
+    //         unsafe
+    //         {
+    //             if(x == 0)
+    //             {
+    //                 channel0 = load_texture(path);
+    //             }
+    //         }
+    //     }
+    // };
+    /////////
     while running {
         //Fix Mojave Bug
         gl_window.resize(PhysicalSize::new(SCREEN_WIDTH, SCREEN_HEIGHT));
@@ -219,7 +264,7 @@ fn main() {
 
         if *should_update_shader.lock().unwrap() == 1 {
             *should_update_shader.lock().unwrap() = 0;
-            shader.update("src/vert.glsl", "playground.glsl");
+            shader.update("src/vert.glsl", "main.glsl");
         }
 
         unsafe {
@@ -242,34 +287,6 @@ fn main() {
             gl::DrawElements(gl::TRIANGLES, 6, gl::UNSIGNED_INT, ptr::null());
 
         }
-
-        let physical_size = gl_window
-            .get_inner_size()
-            .unwrap()
-            .to_physical(gl_window.get_hidpi_factor());
-        let logical_size = physical_size.to_logical(hidpi_factor);
-
-        let frame_size = imgui::FrameSize {
-            logical_size: logical_size.into(),
-            hidpi_factor,
-        };
-        use imgui::*;
-        let ui = imgui.frame(frame_size, 0.016);
-        ui.window(im_str!("Hello world"))
-        .size((300.0, 100.0), ImGuiCond::FirstUseEver)
-        .build(|| {
-            ui.text(im_str!("Hello world!"));
-            ui.text(im_str!("こんにちは世界！"));
-            ui.text(im_str!("This...is...imgui-rs!"));
-            ui.separator();
-            let mouse_pos = ui.imgui().mouse_pos();
-            ui.text(im_str!(
-                "Mouse Position: ({:.1},{:.1})",
-                mouse_pos.0,
-                mouse_pos.1
-            ));
-        });
-        renderer.render(ui);
 
         gl_window.swap_buffers().unwrap();
     }
